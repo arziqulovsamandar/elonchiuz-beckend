@@ -6,6 +6,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { resolve } from 'path';
 import { Admin } from './admin/models/admin.model';
 import { AdminModule } from './admin/admin.module';
+import { User } from './user/models/user.model';
+import { UserModule } from './user/user.module';
 
 
 @Module({
@@ -24,11 +26,12 @@ import { AdminModule } from './admin/admin.module';
       username: process.env.POSTGRES_USER,
       password: String(process.env.POSTGRES_PASSWORD),
       database: process.env.POSTGRES_DB,
-      models: [Admin],
+      models: [Admin,User],
       autoLoadModels: true,
       logging: false,
     }),
-    AdminModule
+    AdminModule,
+    UserModule
   ],
   controllers: [],
   providers: [],
