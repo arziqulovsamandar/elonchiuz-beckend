@@ -4,27 +4,27 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/sequelize';
-import { Admin } from './models/admin.model';
+import { User } from './models/user.model';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Op } from 'sequelize';
 import { Response } from 'express';
-import { LoginAdminDto } from './dto/login-admin.dto';
-import { UpdateAdminYourselfDto } from './dto/update-admin-yourself.dto';
+import { LoginUserDto } from './dto/login-user.dto';
+import { UpdateUserYourselfDto } from './dto/update-user-yourself.dto';
 
 @Injectable()
-export class AdminService {
+export class UserService {
   constructor(
-    @InjectModel(Admin) private readonly adminRepo: typeof Admin,
+    @InjectModel(User) private readonly adminRepo: typeof User,
     private readonly jwtService: JwtService,
   ) {}
 
-  async getTokens(admin: Admin) {
+  async getTokens(admin: User) {
     const jwtPlayload = {
-      id: admin.id
+      id: admin.id,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -44,7 +44,7 @@ export class AdminService {
     };
   }
 
-  async registration(createAdminDto: CreateAdminDto, res: Response) {
+  async registration(createAdminDto: CreateUserDto, res: Response) {
     const admin = await this.adminRepo.findOne({
       where: { phone: createAdminDto.phone },
     });
@@ -79,7 +79,7 @@ export class AdminService {
     });
 
     const response = {
-      message: 'Admin registered',
+      message: 'User registered',
       user: updateAdmin[1][0],
       token,
     };
@@ -87,12 +87,12 @@ export class AdminService {
     return response;
   }
 
-  async login(loginadminDto: LoginAdminDto, res: Response) {
+  async login(loginadminDto: LoginUserDto, res: Response) {
     const { phone, password } = loginadminDto;
     const admin = await this.adminRepo.findOne({ where: { phone } });
 
     if (!admin) {
-      throw new UnauthorizedException('Admin not registered');
+      throw new UnauthorizedException('User not registered');
     }
 
     const isMatchPass = await bcrypt.compare(password, admin.password);
@@ -131,7 +131,7 @@ export class AdminService {
     });
 
     if (!AdminData) {
-      throw new ForbiddenException('Admin not found');
+      throw new ForbiddenException('User not found');
     }
 
     const updatedAdmin = await this.adminRepo.update(
@@ -148,10 +148,9 @@ export class AdminService {
     return response;
   }
 
-
   async updateYourself(
     id: number,
-    updateAdminYourselfDto: UpdateAdminYourselfDto,
+    updateAdminYourselfDto: UpdateUserYourselfDto,
   ) {
     const hashed_password = await bcrypt.hash(
       updateAdminYourselfDto.password,
@@ -166,13 +165,13 @@ export class AdminService {
       },
     );
     if (!admin) {
-      throw new BadRequestException('Admin not found');
+      throw new BadRequestException('User not found');
     }
 
     return admin;
   }
 
-  async updateByAdmin(id: number, updateAdminDto: UpdateAdminDto) {
+  async updateByAdmin(id: number, updateAdminDto: UpdateUserDto) {
     const hashed_password = await bcrypt.hash(updateAdminDto.password, 7);
 
     const admin = await this.adminRepo.update(
@@ -183,7 +182,7 @@ export class AdminService {
       },
     );
     if (!admin) {
-      throw new BadRequestException('Admin not found');
+      throw new BadRequestException('User not found');
     }
 
     return admin;
@@ -193,12 +192,12 @@ export class AdminService {
     const decodedToken = this.jwtService.decode(refreshToken);
 
     if (admin_id != decodedToken['id']) {
-      throw new BadRequestException('Admin not found');
+      throw new BadRequestException('User not found');
     }
 
     const admin = await this.adminRepo.findOne({ where: { id: admin_id } });
     if (!admin || !admin.hashed_refresh_token) {
-      throw new BadRequestException('Admin not found');
+      throw new BadRequestException('User not found');
     }
 
     const tokentMatch = await bcrypt.compare(
@@ -236,7 +235,7 @@ export class AdminService {
   async findByAdmin(id: number) {
     const admin = await this.adminRepo.findByPk(id);
     if (!admin) {
-      throw new BadRequestException('Admin not found');
+      throw new BadRequestException('User not found');
     }
     return admin;
   }
@@ -248,7 +247,7 @@ export class AdminService {
   async removeByAdmin(id: number) {
     const admin = await this.adminRepo.findByPk(id);
     if (!admin) {
-      throw new BadRequestException('Admin not found');
+      throw new BadRequestException('User not found');
     }
     return this.adminRepo.destroy({ where: { id } });
   }
